@@ -1,6 +1,9 @@
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import FileResponse
 from pathlib import Path
+from os import getenv
+
+TILES_DIR = getenv("TILES_DIR", "output_tiles_dir")
 
 app = FastAPI()
 
@@ -25,6 +28,6 @@ async def get_tile(zoom: int, x: int, y: int) -> FileResponse:
             detail=f"Y={y} out of bounds. Only between {y_min} and {y_max}"
         )
 
-    path = Path("output_tiles_dir", str(zoom), str(x), str(y))
+    path = Path(TILES_DIR, str(zoom), str(x), str(y))
     return FileResponse(path, media_type="image/png")
 
