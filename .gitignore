@@ -1,2 +1,6 @@
 venv/
 __pycache__/
+*.png
+*.tif
+output_tiles_dir/
+*.pem
