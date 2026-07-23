@@ -1,6 +1,8 @@
+import numpy as np
+from sys import exit
 import subprocess
 import uvicorn
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pathlib import Path
 from os import getenv
@@ -18,49 +20,10 @@ app = FastAPI()
 
 @app.get("/{zoom}/{x}/{y}")
 async def get_tile(zoom: int, x: int, y: int) -> FileResponse:
-    # if zoom not in range(z_min, z_max+1, 1):
-    #     raise HTTPException(
-    #         status_code=status.HTTP_404_NOT_FOUND,
-    #         detail=f"Zoom={zoom} out of bounds. Valid zoom is only between {z_min} and {z_max}"
-    #     )
-    # if x < x_min or x > x_max:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_404_NOT_FOUND,
-    #         detail=f"X={x} out of bounds. Only between {x_min} and {x_max}"
-    #     )
-    # if y < y_min or y > y_max:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_404_NOT_FOUND,
-    #         detail=f"Y={y} out of bounds. Only between {y_min} and {y_max}"
-    #     )
-
     path = Path(TILES_DIR, str(zoom), str(x), str(y) + ".png")
     if not path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Tile out of bounds"
-        )
+        return FileResponse('./tile_not_found.png', media_type="image/png")
     return FileResponse(path, media_type="image/png")
-
-
-def create_tilemap(args):
-    png_path: Path = args.filename
-    bbox: str = args.bbox
-    min_zoom, max_zoom = args.min_zoom, args.max_zoom
-    if not png_path.exists():
-        return
-    output_dir = Path(TILES_DIR)
-    if output_dir.exists():
-        print("Remove output_dir before running!")
-
-    subprocess.run(['gdal', 'raster', 'pipeline',
-                    'read', str(png_path), '!',
-                    'edit', '--bbox', bbox,
-                    '--crs', 'EPSG:4326', '!',
-                    'write', 'world_georeferenced.tif', '--format=GTiff'])
-    subprocess.run(['gdal', 'raster', 'tile',
-                    '--min-zoom', min_zoom, '--max-zoom', max_zoom,
-                    'world_georeferenced.tif', TILES_DIR])
 
 def serve_tiles(args):
     host: str = args.host
@@ -73,27 +36,90 @@ def serve_tiles(args):
         ssl_certfile="./localhost+2.pem"
     )
 
+def create_tilemap(args):
+    png_path: Path = args.filename
+    bbox: str = args.bbox
+    min_zoom, max_zoom = args.min_zoom, args.max_zoom
+    if not png_path.exists():
+        return
+    output_dir = Path(TILES_DIR)
+    if output_dir.exists():
+        print(f"Cannot overwrite {output_dir}. Remove before running!")
+        exit(1)
+
+    subprocess.run(['gdal', 'raster', 'pipeline',
+                    'read', str(png_path), '!',
+                    'edit', '--bbox', bbox,
+                    '--crs', 'EPSG:4326', '!',
+                    'write', str(png_path.stem) + '.tif', '--format=GTiff'])
+    subprocess.run(['gdal', 'raster', 'tile',
+                    '--min-zoom', str(min_zoom),
+                    '--max-zoom', str(max_zoom),
+                    str(png_path.stem) + '.tif', TILES_DIR])
+
+def gazebo_take_photo(height: float, hfov: float, filename: str) -> None:
+    #TODO
+    print(f"Generated map to {filename}.png")
+
+def get_bbox(meter_offset: float, lat: float, lon: float) -> tuple[float, float, float, float]:
+    EARTH_EQUATOR_RADIUS = 6378
+    km_per_rad = (np.pi/180) * EARTH_EQUATOR_RADIUS * np.cos(lat * np.pi/180)
+    dcoord = meter_offset / 1000 / km_per_rad
+    new_lat = lat + dcoord
+    new_lon = lon + dcoord / np.cos(lat * np.pi/180)
+    return (-new_lon,-new_lat,new_lon,new_lat)
+
+def get_image_offset(height: float, hfov: float) -> float:
+    # SOHCAHTOA: Tan(angle) = Opposite / Adjacent
+    # Opposite = objective, Adjacent = camera height, angle = half the hfov
+    return np.tan(hfov/2) * height
+
+def calculate_ideal_zoom(bbox: tuple[float,float,float,float]) -> tuple[int, int]:
+    # TODO
+    return (16,19)
+
+def create_map(args):
+    height = args.height
+    hfov = args.hfov
+    lat = args.lat
+    lon = args.lon
+    map_name = args.filename
+
+    # Generate the camera sdf and instance it in a gazebo world
+    gazebo_take_photo(height, hfov, map_name)
+
+    offset = get_image_offset(height, hfov)
+    bbox = get_bbox(offset, lat, lon)
+
+    min_zoom,max_zoom = calculate_ideal_zoom(bbox)
+
+    pretty_bbox = ",".join(map(str, bbox))
+
+    print("To create a tilemap from this image, run:")
+    print(f"python3 serve_tiles.py create {map_name}.png --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom}")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=SCRIPT_DESCRIPTION)
     subparsers = parser.add_subparsers(
         dest="command", required=True, help="Available subcommands")
 
     parser_create = subparsers.add_parser(
-            "create", help="Create a new tilemap")
+        "create", help="Create a new tilemap"
+    )
     parser_create.add_argument(
         'filename', type=Path,
         help='Create a tilemap from path to png.', metavar="PNG_PATH"
     )
     parser_create.add_argument(
-        '--bbox', type=str, default='-100,-100,100,100',
+        '--bbox', type=str, default='-0.0023,-0.0023,0.0023,0.0023',
         help='Bounding box to pass to gdal raster pipeline'
     )
     parser_create.add_argument(
-        '--min_zoom', type=int, default=2,
+        '--min_zoom', type=int, default=16,
         help='Minimum zoom for the tilemap'
     )
     parser_create.add_argument(
-        '--max_zoom', type=int, default=5,
+        '--max_zoom', type=int, default=19,
         help='Maximum zoom for the tilemap'
     )
     parser_create.set_defaults(func=create_tilemap)
@@ -109,6 +135,31 @@ if __name__ == "__main__":
         help='Port for connection.'
     )
     parser_serve.set_defaults(func=serve_tiles)
+
+    parser_photo = subparsers.add_parser(
+        "photo", help="Take a photo inside a gazebo simulation"
+    )
+    parser_photo.add_argument(
+        'filename', type=str,
+        help='Create a map image and save at NAME.png.', metavar="NAME"
+    )
+    parser_photo.add_argument(
+        'h', '--height', type=float, default=5000,
+        help='Height of the camera inside gazebo. Default is high enough to appear ortographic.'
+    )
+    parser_photo.add_argument(
+        'f', '--hfov', type=float, default=0.101,
+        help='Horizontal field of view of the camera. Default is low enough to appear ortographic.'
+    )
+    parser_photo.add_argument(
+        '--latitude', type=float, default=0,
+        help='Latitude in degrees of the origin of the gazebo simulation.'
+    )
+    parser_photo.add_argument(
+        '--longitude', type=float, default=0,
+        help='Longitude in degrees of the origin of the gazebo simulation.'
+    )
+    parser_serve.set_defaults(func=create_map)
 
     args = parser.parse_args()
     args.func(args)
