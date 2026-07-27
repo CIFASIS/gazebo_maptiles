@@ -144,11 +144,11 @@ if __name__ == "__main__":
         help='Create a map image and save at NAME.png.', metavar="NAME"
     )
     parser_photo.add_argument(
-        'h', '--height', type=float, default=5000,
+        '--height', type=float, default=5000,
         help='Height of the camera inside gazebo. Default is high enough to appear ortographic.'
     )
     parser_photo.add_argument(
-        'f', '--hfov', type=float, default=0.101,
+        '-f', '--hfov', type=float, default=0.101,
         help='Horizontal field of view of the camera. Default is low enough to appear ortographic.'
     )
     parser_photo.add_argument(
