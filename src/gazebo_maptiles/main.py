@@ -29,11 +29,11 @@ def serve_tiles(args):
     host: str = args.host
     port: int = args.port
     uvicorn.run(
-        "serve_tiles:app",
+        "gazebo_maptiles.main:app",
         host=host,
         port=port,
-        ssl_keyfile="./localhost+2-key.pem",
-        ssl_certfile="./localhost+2.pem"
+        # ssl_keyfile="./localhost+2-key.pem",
+        # ssl_certfile="./localhost+2.pem"
     )
 
 def create_tilemap(args):
@@ -74,16 +74,23 @@ def get_image_offset(height: float, hfov: float) -> float:
     # Opposite = objective, Adjacent = camera height, angle = half the hfov
     return np.tan(hfov/2) * height
 
+def get_image_height(offset: float, hfov: float) -> float:
+    return offset / np.tan(hfov/2)
+
 def calculate_ideal_zoom(bbox: tuple[float,float,float,float]) -> tuple[int, int]:
     # TODO
     return (16,19)
 
 def create_map(args):
-    height = args.height
-    hfov = args.hfov
-    lat = args.lat
-    lon = args.lon
-    map_name = args.filename
+    sq_side: float | None = args.square_side
+    hfov: float = args.hfov
+    if sq_side is not None:
+        height = get_image_height(sq_side, hfov)
+    else:
+        height = args.height
+    lat: float = args.lat
+    lon: float = args.lon
+    map_name: str = args.filename
 
     # Generate the camera sdf and instance it in a gazebo world
     gazebo_take_photo(height, hfov, map_name)
@@ -98,7 +105,7 @@ def create_map(args):
     print("To create a tilemap from this image, run:")
     print(f"python3 serve_tiles.py create {map_name}.png --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom}")
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description=SCRIPT_DESCRIPTION)
     subparsers = parser.add_subparsers(
         dest="command", required=True, help="Available subcommands")
@@ -144,11 +151,15 @@ if __name__ == "__main__":
         help='Create a map image and save at NAME.png.', metavar="NAME"
     )
     parser_photo.add_argument(
-        '--height', type=float, default=5000,
-        help='Height of the camera inside gazebo. Default is high enough to appear ortographic.'
+        '--square_side', type=float,
+        help='Length of the side of the map.'
     )
     parser_photo.add_argument(
-        '-f', '--hfov', type=float, default=0.101,
+        '--height', type=float,
+        help='Height of the camera inside gazebo.'
+    )
+    parser_photo.add_argument(
+        '--hfov', type=float, default=0.101,
         help='Horizontal field of view of the camera. Default is low enough to appear ortographic.'
     )
     parser_photo.add_argument(
@@ -159,8 +170,10 @@ if __name__ == "__main__":
         '--longitude', type=float, default=0,
         help='Longitude in degrees of the origin of the gazebo simulation.'
     )
-    parser_serve.set_defaults(func=create_map)
+    parser_photo.set_defaults(func=create_map)
 
     args = parser.parse_args()
     args.func(args)
 
+if __name__ == "__main__":
+    main()
