@@ -58,8 +58,8 @@ def main():
         "photo", help="Take a photo inside a gazebo simulation"
     )
     parser_photo.add_argument(
-        'filename', type=str,
-        help='Create a map image and save at NAME.png.', metavar="NAME"
+        'filename', type=Path,
+        help='Create a map image and save at PATH.', metavar="PATH"
     )
     parser_photo.add_argument(
         '--square_side', type=float,

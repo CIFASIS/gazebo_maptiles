@@ -21,7 +21,7 @@ def serve_tiles(args):
     port: int = args.port
 
     uvicorn.run(
-        "gazebo_maptiles.main:app",
+        "gazebo_maptiles.serve_tiles:app",
         host=host,
         port=port,
     )
