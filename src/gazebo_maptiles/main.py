@@ -59,10 +59,10 @@ def main():
     )
     parser_photo.add_argument(
         'filename', type=Path,
-        help='Create a map image and save at PATH.', metavar="PATH"
+        help='Create a map image and save at IMG_PATH.', metavar="IMG_PATH"
     )
     parser_photo.add_argument(
-        '--square_side', type=float,
+        '-s', '--square_side', type=float,
         help='Length of the side of the map.'
     )
     parser_photo.add_argument(
@@ -80,6 +80,10 @@ def main():
     parser_photo.add_argument(
         '--longitude', type=float, default=0,
         help='Longitude in degrees of the origin of the gazebo simulation.'
+    )
+    parser_photo.add_argument(
+        'world_path', type=Path, metavar="WORLD_PATH",
+        help='Path to the gazebo world in which to take the photo.',
     )
     parser_photo.set_defaults(func=create_map)
 

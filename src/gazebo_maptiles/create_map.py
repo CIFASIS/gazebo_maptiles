@@ -1,8 +1,31 @@
+from watchdog.observers.api import BaseObserver
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler, FileSystemEvent
+from time import sleep
+import subprocess
+
 from pathlib import Path
 import numpy as np
 
 from lxml.etree import Element, SubElement,\
-        _Element, XMLParser, parse, tostring, _ElementTree
+        _Element, parse, tostring, _ElementTree
+
+class WatchFileCreation(FileSystemEventHandler):
+    def __init__(self, watch_dir: str, target_path: Path, observer: BaseObserver):
+        self.watch_dir = watch_dir
+        self.target_path = target_path
+        self.observer = observer
+
+    def on_closed(self, event: FileSystemEvent):
+        if event.is_directory:
+            return
+
+
+        source_path = Path(str(event.src_path))
+        source_path.replace(self.target_path)
+        print(f"Created {self.target_path.name}!")
+
+        self.observer.stop()
 
 def prettyprint(element, **kwargs):
     xml = tostring(element, pretty_print=True, **kwargs)
@@ -18,7 +41,7 @@ class Pose:
         self.yaw = yaw
 
     def createElement(self):
-        pose = Element('pose', frame='')
+        pose = Element('pose')
         pose.text = "%.2f %.2f %.2f %.2f %.2f %.2f" % (self.x, self.y, self.z, self.roll, self.pitch, self.yaw)
         return pose
 
@@ -49,29 +72,62 @@ def create_camera_xml(height: float, hfov: float, res: int = 3840) -> _Element:
 
     return model
 
-def gazebo_take_photo(height: float, hfov: float, filepath: Path, world_path: Path, res: int = 3840) -> None:
-    camera = create_camera_xml(height, hfov, res)
-    print("camera sdf:")
-    prettyprint(camera)
+def create_world_xml(camera, world_path):
+    world: _ElementTree = parse(world_path)
+    if type(world) is _ElementTree:
+        world_element = world.find('world')
+        if world_element is not None:
+            world_element.append(camera)
 
-    # Take the image starting the gazebo world with the added camera
-    world = parse(world_path)
-    if world is not _ElementTree:
+            sensors_plugin = world_element.xpath('//plugin[@name="gz::sim::systems::Sensors"]')
+            if not sensors_plugin:
+                new_plugin = Element(
+                    "plugin", {
+                        "name": "gz::sim::systems::Sensors",
+                        "filename": "gz-sim-sensors-system"
+                    }
+                )
+                SubElement(new_plugin, "render_engine").text = "ogre2"
+                world_element.append(new_plugin)
+        else:
+            print(f"Did not find <world> tag in {world_path}")
+            exit(-1)
+    else:
         print(f"Gazebo world at {world_path} not found")
         exit(-1)
-    else:
-        world.append(camera)
 
-    # Move it from /tmp/gazebo_images/
-    files = list(Path(TMP_IMAGE_PATH).glob("*.png"))
-    if files:
-        latest = max(files, key=lambda f: f.stat().st_mtime)
-        latest.rename(filepath)
-    else:
-        print("Failed to generate image")
-        exit(-1)
+    world_with_cam = "/tmp/gazebo_world_with_camera.sdf"
+    world.write(file=world_with_cam)
+    # print("World + camera sdf:")
+    # prettyprint(world)
 
-    print(f"Generated map to {filepath}")
+    return world_with_cam
+
+def gazebo_take_photo(height: float, hfov: float, filepath: Path, world_path: Path, res: int = 3840) -> None:
+    camera = create_camera_xml(height, hfov, res)
+    # print("camera sdf:")
+    # prettyprint(camera)
+
+    # Setup world with a camera, and add sensor plugin if missing
+    world_with_cam = create_world_xml(camera, world_path)
+
+    # Setup watchdog to wait until the map photo is done 
+    Path(TMP_IMAGE_PATH).mkdir(exist_ok=True)
+    observer = Observer()
+    event_handler = WatchFileCreation(TMP_IMAGE_PATH, filepath, observer)
+    observer.schedule(event_handler, path=TMP_IMAGE_PATH, recursive=False)
+    observer.start()
+
+    gz_process = subprocess.Popen(["gz", "sim", "-s", "-r", world_with_cam])
+
+    sleep(2)
+
+    trigger_msg = subprocess.Popen(['gz', 'topic', '-t', '/world_ortho/trigger', '-m', 'gz.msgs.Boolean', '-p', 'data: true', '-n', '1'])
+    trigger_msg.wait()
+
+    # TODO: add timeout
+    observer.join()
+    gz_process.terminate()
 
 def get_bbox(meter_offset: float, lat: float, lon: float) -> tuple[float, float, float, float]:
     EARTH_EQUATOR_RADIUS = 6378
@@ -90,7 +146,7 @@ def get_image_height(offset: float, hfov: float) -> float:
     return offset / np.tan(hfov/2)
 
 def calculate_ideal_zoom(bbox: tuple[float,float,float,float]) -> tuple[int, int]:
-    # TODO
+    # TODO: calculate zoom by image resolution
     return (16,19)
 
 def create_map(args):
@@ -108,6 +164,9 @@ def create_map(args):
     map_name: Path = args.filename
     world_path: Path = args.world_path
 
+    if not map_name.suffix:
+        map_name = map_name.with_suffix(".png")
+
     # Generate the camera sdf and instance it in a gazebo world
     gazebo_take_photo(height, hfov, map_name, world_path)
 
@@ -119,6 +178,6 @@ def create_map(args):
     pretty_bbox = ",".join(map(lambda val: "%.7f" % val, bbox))
 
     print("To create a tilemap from this image, run:")
-    print(f"uv run cli create {map_name}.png --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom}")
+    print(f"uv run cli create {map_name} --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom}")
     print("or")
-    print(f"python3 ./src/gazebo_maptiles/main.py create {map_name}.png --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom}")
+    print(f"python3 ./src/gazebo_maptiles/main.py create {map_name} --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom}")
