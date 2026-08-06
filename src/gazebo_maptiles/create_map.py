@@ -47,10 +47,11 @@ class Pose:
 
 TMP_IMAGE_PATH = "/tmp/gazebo_images"
 
-def create_camera_xml(height: float, hfov: float, res: int = 3840) -> _Element:
+def create_camera_xml(height: float, hfov: float, lat: float, lon: float, res: int = 3840) -> _Element:
+    x,y = latlon_to_meters(lat, lon)
     model = Element('model', name='ortho_map_camera')
     # Rotate the camera 90deg east because gazebo is ENU
-    model.append(Pose(0,0,height,-1.57,1.57,0).createElement())
+    model.append(Pose(x,y,height,-1.57,1.57,0).createElement())
     SubElement(model, 'static').text = 'true'
     link = SubElement(model, 'link', name='camera_link')
     sensor = SubElement(link, 'sensor', name='map_sensor', type='camera')
@@ -103,8 +104,8 @@ def create_world_xml(camera, world_path):
 
     return world_with_cam
 
-def gazebo_take_photo(height: float, hfov: float, filepath: Path, world_path: Path, res: int = 3840) -> None:
-    camera = create_camera_xml(height, hfov, res)
+def gazebo_take_photo(height: float, hfov: float, lat: float, lon: float, filepath: Path, world_path: Path, res: int = 3840) -> None:
+    camera = create_camera_xml(height, hfov, lat, lon, res)
     # print("camera sdf:")
     # prettyprint(camera)
 
@@ -129,6 +130,12 @@ def gazebo_take_photo(height: float, hfov: float, filepath: Path, world_path: Pa
     observer.join()
     gz_process.terminate()
 
+def latlon_to_meters(lat: float, lon: float) -> tuple[float, float]:
+    # TODO: figure out how to define the position inside gazebo with the latitude and longitude.
+    # For now, we just take the photo from the 0,0 position.
+    x, y = 0,0
+    return (x, y)
+
 def get_bbox(meter_offset: float, lat: float, lon: float) -> tuple[float, float, float, float]:
     EARTH_EQUATOR_RADIUS = 6378
     km_per_rad = (np.pi/180) * EARTH_EQUATOR_RADIUS * np.cos(lat * np.pi/180)
@@ -152,13 +159,10 @@ def calculate_ideal_zoom(bbox: tuple[float,float,float,float]) -> tuple[int, int
 def create_map(args):
     sq_side: float | None = args.square_side
     hfov: float = args.hfov
-    if sq_side is not None:
+    if sq_side:
         height = get_image_height(sq_side/2, hfov)
     else:
         height = args.height
-        if height is None:
-            print("ERROR: square_side and height are not set! Need one of them")
-            exit(-1)
     lat: float = args.latitude
     lon: float = args.longitude
     map_name: Path = args.filename
@@ -168,7 +172,7 @@ def create_map(args):
         map_name = map_name.with_suffix(".png")
 
     # Generate the camera sdf and instance it in a gazebo world
-    gazebo_take_photo(height, hfov, map_name, world_path)
+    gazebo_take_photo(height, hfov, lat, lon, map_name, world_path)
 
     offset = get_image_offset(height, hfov)
     bbox = get_bbox(offset, lat, lon)
