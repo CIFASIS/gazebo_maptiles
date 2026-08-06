@@ -8,18 +8,18 @@ Utility to create and serve tilemaps for gazebo simulations
 
 - 'Gazebo' to take the map photo (https://gazebosim.org/home)
 - 'Gdal' to transform the png into a tilemap (https://gdal.org/en/stable/index.html)
-- 'Mapviz' to display the tiles
+- 'Mapviz' to display the tiles (https://swri-robotics.github.io/mapviz/)
 
 ### Using uv
 
-You only need to run the package through uv and it will setup a virtual environment.
+You only need to run the package through uv and it will setup a virtual environment automatically.
 
 ### Using pip
 
 0) (__Recommended__) Create a virtual environment
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 1) Install the requirements with pip
 ```bash
@@ -33,15 +33,15 @@ deactivate # turns it off
 ## Running
 
 ```bash
-usage: cli [-h] {create,serve,photo} ...
+usage: cli [-h] {photo,create,serve} ...
 
 Script to create and serve tilemaps
 
 positional arguments:
-  {create,serve,photo}  Available subcommands
+  {photo,create,serve}  Available subcommands
+    photo               Take a photo inside a gazebo simulation
     create              Create a new tilemap
     serve               Start a tilemap server
-    photo               Take a photo inside a gazebo simulation
 
 options:
   -h, --help            show this help message and exit
@@ -50,19 +50,15 @@ options:
 ### Using uv
 
 ```bash
-uv run cli [-h] {create,serve,photo} ...
+uv run cli [-h] {photo,create,serve} ...
 ```
 
 ### Using pip
 
 ```bash
-python3 src/gazebo_maptiles/main.py [-h] {create,serve,photo} ...
+python3 src/gazebo_maptiles/main.py [-h] {photo,create,serve} ...
 ```
 
-## Example
-
-We're going to get a map from a gazebo simulation setup by PX4 using worlds from OpenRobotics (https://github.com/PX4/PX4-gazebo-models/blob/main/worlds/baylands.sdf)
-
-
+To see an example of the project, check out the [baylands example](./docs/example.md)
 
 ## Contributing

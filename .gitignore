@@ -3,7 +3,10 @@ __pycache__/
 *.png
 *.tif
 output_tiles_dir/
+tiles_dirs/
 *.pem
 
 # un-ignore tile not found image
 !tile_not_found.png
+!baylands_map.jpg
+!mapviz.png
