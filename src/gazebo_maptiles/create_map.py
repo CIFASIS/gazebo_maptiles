@@ -10,6 +10,8 @@ import numpy as np
 from lxml.etree import Element, SubElement,\
         _Element, parse, tostring, _ElementTree
 
+recv_trigger: bool = False
+
 class WatchFileCreation(FileSystemEventHandler):
     def __init__(self, watch_dir: str, target_path: Path, observer: BaseObserver):
         self.watch_dir = watch_dir
@@ -20,12 +22,18 @@ class WatchFileCreation(FileSystemEventHandler):
         if event.is_directory:
             return
 
-
         source_path = Path(str(event.src_path))
         source_path.replace(self.target_path)
         print(f"Created {self.target_path.name}!")
 
         self.observer.stop()
+
+    def on_created(self, event: FileSystemEvent):
+        if event.is_directory:
+            return
+
+        global recv_trigger
+        recv_trigger = True
 
 def prettyprint(element, **kwargs):
     xml = tostring(element, pretty_print=True, **kwargs)
@@ -121,12 +129,13 @@ def gazebo_take_photo(height: float, hfov: float, lat: float, lon: float, filepa
 
     gz_process = subprocess.Popen(["gz", "sim", "-s", "-r", world_with_cam])
 
-    sleep(2)
+    global recv_trigger
+    while not recv_trigger:
+        trigger_msg = subprocess.Popen(['gz', 'topic', '-t', '/world_ortho/trigger', '-m', 'gz.msgs.Boolean', '-p', 'data: true', '-n', '1'])
+        trigger_msg.wait()
+        sleep(1)
 
-    trigger_msg = subprocess.Popen(['gz', 'topic', '-t', '/world_ortho/trigger', '-m', 'gz.msgs.Boolean', '-p', 'data: true', '-n', '1'])
-    trigger_msg.wait()
-
-    # TODO: add timeout
+    # TODO: Add a timeout and handle with an error message
     observer.join()
     gz_process.terminate()
 
@@ -182,6 +191,6 @@ def create_map(args):
     pretty_bbox = ",".join(map(lambda val: "%.7f" % val, bbox))
 
     print("To create a tilemap from this image, run:")
-    print(f"uv run cli create {map_name} --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom}")
-    print("or")
-    print(f"python3 ./src/gazebo_maptiles/main.py create {map_name} --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom}")
+    print(f"uv run cli create {map_name} --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom} PNG_PATH tiles_dir")
+    print("or if you're not using uv:")
+    print(f"python3 ./src/gazebo_maptiles/main.py create {map_name} --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom} PNG_PATH tiles_dir")
