@@ -191,6 +191,6 @@ def create_map(args):
     pretty_bbox = ",".join(map(lambda val: "%.7f" % val, bbox))
 
     print("# To create a tilemap from this image, run:")
-    print(f"uv run cli create {map_name} --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom} PNG_PATH tiles_dir")
+    print(f"uv run cli create --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom} {map_name} tiles_dir")
     print("# or if you're not using uv:")
-    print(f"python3 ./src/gazebo_maptiles/main.py create {map_name} --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom} PNG_PATH tiles_dir")
+    print(f"python3 ./src/gazebo_maptiles/main.py create --bbox '{pretty_bbox}' --min_zoom {min_zoom} --max_zoom {max_zoom} {map_name} tiles_dir")

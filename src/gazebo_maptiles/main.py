@@ -61,15 +61,15 @@ def main():
         help='Directory to save the tiles in.'
     )
     parser_create.add_argument(
-        '--bbox', type=str,
+        '--bbox', type=str, required=True,
         help='Bounding box to pass to gdal raster pipeline'
     )
     parser_create.add_argument(
-        '--min_zoom', type=int,
+        '--min_zoom', type=int, required=True,
         help='Minimum zoom for the tilemap'
     )
     parser_create.add_argument(
-        '--max_zoom', type=int,
+        '--max_zoom', type=int, required=True,
         help='Maximum zoom for the tilemap'
     )
     parser_create.set_defaults(func=create_tilemap)
