@@ -61,7 +61,7 @@ def main():
         help='Directory to save the tiles in.'
     )
     parser_create.add_argument(
-        '--bbox', type=str, required=True,
+        '--bbox', type=float, nargs=4, required=True,
         help='Bounding box to pass to gdal raster pipeline'
     )
     parser_create.add_argument(
