@@ -62,3 +62,20 @@ python3 src/gazebo_maptiles/main.py [-h] {photo,create,serve} ...
 To see an example of the project, check out the [baylands example](./docs/example.md)
 
 ## Contributing
+
+To contribute, follow the next steps:
+
+1. Fork the project. (by clicking the 'Fork' button in the repository)
+2. Create your feature branch (`git checkout -b feature`)
+3. Commit your changes (`git commit -m 'Add some feature'`)
+4. Push to the branch (`git push origin feature`)
+5. Open a pull request.
+
+## Roadmap
+
+- [x] Create the camera and capture the map photo
+- [x] Make a tileset from the map photo
+- [x] Serve the tiles with a FastAPI server
+- [ ] Position the camera inside gazebo with the specified latitude and longitude.
+- [x] Calculate the zoom based on the size of the map
+- [ ] Capture multiple photos and make a tileset from them

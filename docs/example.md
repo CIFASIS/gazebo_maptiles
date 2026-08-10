@@ -6,6 +6,8 @@ then, we get a photo of the map by running
 
 ```bash
 uv run cli photo --square_side 500 baylands_map.png ./baylands.sdf
+# or if you're not using uv:
+python3 ./src/gazebo_maptiles/main.py photo --square_side 500 baylands_map.png ./baylands.sdf
 ```
 
 ![Baylands map](./baylands_map.jpg)
@@ -20,6 +22,8 @@ python3 ./src/gazebo_maptiles/main.py create --bbox '-0.0022458,-0.0022458,0.002
 ```
 
 Then, after choosing a directory for the tiles (in this case, we choose 'baylands_tiles') and running the command we get a tilemap for our gazebo simulation.
+
+![zoom example](./zoom_example.jpg)
 
 To make use of it, we run the suggested command:
 
