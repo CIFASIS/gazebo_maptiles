@@ -53,7 +53,7 @@ class Pose:
         pose.text = "%.2f %.2f %.2f %.2f %.2f %.2f" % (self.x, self.y, self.z, self.roll, self.pitch, self.yaw)
         return pose
 
-TMP_IMAGE_PATH = "/tmp/gazebo_images"
+TMP_IMAGE_PATH: Path = Path("/") / "tmp" /"gazebo_images"
 
 def create_camera_xml(height: float, hfov: float, lat: float, lon: float, res: int = 3840) -> _Element:
     x,y = latlon_to_meters(lat, lon)
@@ -70,7 +70,7 @@ def create_camera_xml(height: float, hfov: float, lat: float, lon: float, res: i
     SubElement(camera, 'triggered').text = 'true'
     SubElement(camera, 'trigger_topic').text = '/world_ortho/trigger'
     save = SubElement(camera, 'save', enabled='true')
-    SubElement(save, 'path').text = TMP_IMAGE_PATH
+    SubElement(save, 'path').text = str(TMP_IMAGE_PATH)
     SubElement(camera, 'horizontal_fov').text = str(hfov)
     image = SubElement(camera, 'image')
     SubElement(image, 'width').text = str(res)
@@ -121,10 +121,10 @@ def gazebo_take_photo(height: float, hfov: float, lat: float, lon: float, filepa
     world_with_cam = create_world_xml(camera, world_path)
 
     # Setup watchdog to wait until the map photo is done 
-    Path(TMP_IMAGE_PATH).mkdir(exist_ok=True)
+    TMP_IMAGE_PATH.mkdir(exist_ok=True)
     observer = Observer()
-    event_handler = WatchFileCreation(TMP_IMAGE_PATH, filepath, observer)
-    observer.schedule(event_handler, path=TMP_IMAGE_PATH, recursive=False)
+    event_handler = WatchFileCreation(str(TMP_IMAGE_PATH), filepath, observer)
+    observer.schedule(event_handler, path=str(TMP_IMAGE_PATH), recursive=False)
     observer.start()
 
     gz_process = subprocess.Popen(["gz", "sim", "-s", "-r", world_with_cam])
@@ -162,8 +162,30 @@ def get_image_height(offset: float, hfov: float) -> float:
     return offset / np.tan(hfov/2)
 
 def calculate_ideal_zoom(bbox: tuple[float,float,float,float]) -> tuple[int, int]:
-    # TODO: calculate zoom by image resolution
-    return (16,19)
+    '''return zooms for:
+        1 tile for whole map to 64 tiles for whole map
+        that is closest to fit the map size
+    '''
+
+    quarter = bbox[2] # length of a quarter tile
+    zoom_levels = [360.0]
+    for zoom in range(1,21):
+        zoom_levels.append(zoom_levels[zoom-1] / 2.0)
+
+    diff_to_tile = [abs(width - quarter) for width in zoom_levels]
+
+    # find the zoom that fits 4 quarter tiles best
+    index = 0
+    min_zoom_diff = np.inf
+    for (i, zoom_diff) in enumerate(diff_to_tile):
+        if zoom_diff < min_zoom_diff:
+            min_zoom_diff = zoom_diff
+            index = i
+
+    if index > 0:
+        return (index-1,index+3)
+    else:
+        return (index, index+3)
 
 def create_map(args):
     sq_side: float | None = args.square_side
@@ -191,6 +213,7 @@ def create_map(args):
     pretty_bbox = " ".join(map(lambda val: "%.7f" % val, bbox))
 
     print("# To create a tilemap from this image, run:")
-    print(f"uv run cli create --bbox {pretty_bbox} --min_zoom {min_zoom} --max_zoom {max_zoom} {map_name} tiles_dir")
+    command_text = f"create --bbox {pretty_bbox} --min_zoom {min_zoom} --max_zoom {max_zoom} {map_name} tiles_dir"
+    print("uv run cli" + command_text)
     print("# or if you're not using uv:")
-    print(f"python3 ./src/gazebo_maptiles/main.py create --bbox {pretty_bbox} --min_zoom {min_zoom} --max_zoom {max_zoom} {map_name} tiles_dir")
+    print("python3 ./src/gazebo_maptiles/main.py" + command_text)
