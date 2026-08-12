@@ -59,7 +59,11 @@ uv run cli [-h] {photo,create,serve} ...
 python3 src/gazebo_maptiles/main.py [-h] {photo,create,serve} ...
 ```
 
-To see an example of the project, check out the [baylands example](./docs/example.md)
+## Documentation
+
+To see an example of the project, check out the [baylands example](./docs/baylands_example/example.md)
+
+If you want an explanation for how the values for the map are calculated, check out [calculations](./docs/calculations/calculations.md)
 
 ## Contributing
 
