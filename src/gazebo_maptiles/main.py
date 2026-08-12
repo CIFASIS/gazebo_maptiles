@@ -46,6 +46,10 @@ def main():
         '--longitude', type=float, default=0,
         help='Longitude in degrees of the origin of the gazebo simulation.'
     )
+    parser_photo.add_argument(
+        '--resolution', type=int, default=3840,
+        help='Resolution for the square image taken inside gazebo.'
+    )
     parser_photo.set_defaults(func=create_map)
 
     # CREATE subcommand: Using the gazebo photo, create a tilemap

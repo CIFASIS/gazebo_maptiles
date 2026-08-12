@@ -112,7 +112,7 @@ def create_world_xml(camera, world_path):
 
     return world_with_cam
 
-def gazebo_take_photo(height: float, hfov: float, lat: float, lon: float, filepath: Path, world_path: Path, res: int = 3840) -> None:
+def gazebo_take_photo(height: float, hfov: float, lat: float, lon: float, filepath: Path, world_path: Path, res: int) -> None:
     camera = create_camera_xml(height, hfov, lat, lon, res)
     # print("camera sdf:")
     # prettyprint(camera)
@@ -147,9 +147,10 @@ def latlon_to_meters(lat: float, lon: float) -> tuple[float, float]:
 
 def get_bbox(meter_offset: float, lat: float, lon: float) -> tuple[float, float, float, float]:
     EARTH_EQUATOR_RADIUS = 6378
-    km_per_rad = (np.pi/180) * EARTH_EQUATOR_RADIUS * np.cos(lat * np.pi/180)
-    dcoord = meter_offset / 1000 / km_per_rad
+    km_per_deg = (np.pi/180) * EARTH_EQUATOR_RADIUS * np.cos(lat * np.pi/180)
+    dcoord = meter_offset / 1000 / km_per_deg
     new_lat = lat + dcoord
+    # use old latitude because we want to move longitudinally from the same latitude we started
     new_lon = lon + dcoord / np.cos(lat * np.pi/180)
     return (-new_lon,-new_lat,new_lon,new_lat)
 
@@ -191,21 +192,23 @@ def create_map(args):
     sq_side: float | None = args.square_side
     hfov: float = args.hfov
     if sq_side:
-        height = get_image_height(sq_side/2, hfov)
+        offset = sq_side/2
+        height = get_image_height(offset, hfov)
     else:
         height = args.height
+        offset = get_image_offset(height, hfov)
     lat: float = args.latitude
     lon: float = args.longitude
     map_name: Path = args.filename
     world_path: Path = args.world_path
+    resolution: int = args.resolution
 
     if not map_name.suffix:
         map_name = map_name.with_suffix(".png")
 
     # Generate the camera sdf and instance it in a gazebo world
-    gazebo_take_photo(height, hfov, lat, lon, map_name, world_path)
+    gazebo_take_photo(height, hfov, lat, lon, map_name, world_path, resolution)
 
-    offset = get_image_offset(height, hfov)
     bbox = get_bbox(offset, lat, lon)
 
     min_zoom,max_zoom = calculate_ideal_zoom(bbox)
