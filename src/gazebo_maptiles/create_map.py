@@ -217,6 +217,6 @@ def create_map(args):
 
     print("# To create a tilemap from this image, run:")
     command_text = f"create --bbox {pretty_bbox} --min_zoom {min_zoom} --max_zoom {max_zoom} {map_name} tiles_dir"
-    print("uv run cli" + command_text)
+    print("uv run cli " + command_text)
     print("# or if you're not using uv:")
-    print("python3 ./src/gazebo_maptiles/main.py" + command_text)
+    print("python3 ./src/gazebo_maptiles/main.py " + command_text)

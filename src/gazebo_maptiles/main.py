@@ -28,11 +28,11 @@ def main():
     photo_length_group = parser_photo.add_mutually_exclusive_group(required=True)
     photo_length_group.add_argument(
         '-s', '--square_side', type=float,
-        help='Length of the side of the map.'
+        help='Length of the side of the map in meters.'
     )
     photo_length_group.add_argument(
         '--height', type=float,
-        help='Height of the camera inside gazebo.'
+        help='Height of the camera inside gazebo in meters.'
     )
     parser_photo.add_argument(
         '--hfov', type=float, default=0.101,
