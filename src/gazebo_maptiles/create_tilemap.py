@@ -24,7 +24,7 @@ def create_tilemap(args):
                     '--max-zoom', str(max_zoom),
                     str(png_path.stem) + '.tif', str(tiles_dir)])
 
-    Path(png_path.stem + '.tif').unlink(missing_ok=True)
+    # Path(png_path.stem + '.tif').unlink(missing_ok=True)
 
     print("# To serve the tiles, run:")
     print(f"uv run cli serve {tiles_dir}")

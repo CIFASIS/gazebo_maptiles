@@ -9,4 +9,5 @@ tiles_dirs/
 # un-ignore tile not found image
 !tile_not_found.png
 !baylands_map.jpg
+!GazeboMapTiles_SummaryPic.png
 !mapviz.png
