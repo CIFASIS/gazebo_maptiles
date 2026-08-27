@@ -29,10 +29,11 @@ You only need to run the package through uv and it will setup a virtual environm
 python3 -m venv .venv
 source .venv/bin/activate
 ```
-1) Install the requirements with pip
+1) Install the project with pip
 ```bash
-pip install -r requirements.txt
-# use the program...
+pip install -e .
+# use the program
+python3 -m gazebo_maptiles.cli ...
 
 # If using a virtual environment
 deactivate # turns it off
@@ -64,7 +65,7 @@ uv run cli [-h] {photo,create,serve} ...
 ### Using pip
 
 ```bash
-python3 src/gazebo_maptiles/main.py [-h] {photo,create,serve} ...
+python3 -m gazebo_maptiles.cli [-h] {photo,create,serve} ...
 ```
 
 ## Contributing

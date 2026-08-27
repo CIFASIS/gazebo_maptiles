@@ -175,12 +175,9 @@ def calculate_ideal_zoom(bbox: tuple[float,float,float,float]) -> tuple[int, int
     
     # length of a quarter tile in meters
     quarter_x = (bbox[2] - bbox[0]) / 2
-    print(f"quarter_x = {quarter_x}")
     # latitude expressed in meters
     quarter_y = (bbox[3] + bbox[1]) / 2
-    print(f"quarter_y = {quarter_y}")
     _, bbox_longitude = meters_to_latlon(quarter_x, quarter_y)
-    print(f"bbox_longitude = {bbox_longitude}")
     zoom_levels = [360.0]
     for zoom in range(1,21):
         zoom_levels.append(zoom_levels[zoom-1] / 2.0)

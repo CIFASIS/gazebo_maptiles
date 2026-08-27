@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-cli = "gazebo_maptiles.main:main"
+cli = "gazebo_maptiles.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.11.32,<0.12"]

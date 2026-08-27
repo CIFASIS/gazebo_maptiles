@@ -7,7 +7,7 @@ then, we get a photo of the map by running
 ```bash
 uv run cli photo --square_side 500 baylands_map.png ./baylands.sdf
 # or if you're not using uv:
-python3 ./src/gazebo_maptiles/main.py photo --square_side 500 baylands_map.png ./baylands.sdf
+python3 -m gazebo_maptiles.cli photo --square_side 500 baylands_map.png ./baylands.sdf
 ```
 
 ![Baylands map](./baylands_map.jpg)
@@ -16,9 +16,9 @@ Once it's done, we get some suggested parameters for the next step: creating the
 
 ```bash
 # To create a tilemap from this image, run:
-uv run cli create --bbox '-0.0022458,-0.0022458,0.0022458,0.0022458' --min_zoom 16 --max_zoom 19 baylands_map.png tiles_dir
+uv run cli create --bbox -250.0 -250.0 250.0 250.0 --min_zoom 16 --max_zoom 20 baylands_map.png tiles_dir
 # or if you're not using uv:
-python3 ./src/gazebo_maptiles/main.py create --bbox '-0.0022458,-0.0022458,0.0022458,0.0022458' --min_zoom 16 --max_zoom 19 baylands_map.png tiles_dir
+python3 -m gazebo_maptiles.cli create --bbox -250.0 -250.0 250.0 250.0 --min_zoom 16 --max_zoom 20 baylands_map.png tiles_dir
 ```
 
 Then, after choosing a directory for the tiles (in this case, we choose 'baylands_tiles') and running the command we get a tilemap for our gazebo simulation.
@@ -31,7 +31,7 @@ To make use of it, we run the suggested command:
 # To serve the tiles, run:
 uv run cli serve baylands_tiles
 # or if you're not using uv:
-python3 ./src/gazebo_maptiles/main.py serve baylands_tiles
+python3 -m gazebo_maptiles.cli serve baylands_tiles
 ```
 
 and now we have a functioning WMTS (web map tile service) source to use with mapviz or for other applications.
@@ -49,6 +49,6 @@ ros2 topic pub /gz/reach_m2/fix sensor_msgs/msg/NavSatFix "{
 }"
 ```
 
-Set the base URL of the "Custom WMTS Source" to "http://localhost:8000/{level}/{x}/{y}" and max zoom to the one selected (19 in our case) then hit "save". (You might need to zoom in a lot to see it)
+Set the base URL of the "Custom WMTS Source" to "http://localhost:8000/{level}/{x}/{y}" and max zoom to the one selected (20 in our case) then hit "save". (You might need to zoom in a lot to see it)
 
 ![Using Mapviz to show the tilemap](./mapviz.png)

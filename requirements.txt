@@ -1,2 +1,5 @@
 fastapi[standard]
 numpy
+watchdog
+lxml
+pyproj
