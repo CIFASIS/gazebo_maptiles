@@ -7,6 +7,8 @@ import subprocess
 from pathlib import Path
 import numpy as np
 
+import pyproj
+
 from lxml.etree import Element, SubElement,\
         _Element, parse, tostring, _ElementTree
 
@@ -140,19 +142,22 @@ def gazebo_take_photo(height: float, hfov: float, lat: float, lon: float, filepa
     gz_process.terminate()
 
 def latlon_to_meters(lat: float, lon: float) -> tuple[float, float]:
-    # TODO: figure out how to define the position inside gazebo with the latitude and longitude.
-    # For now, we just take the photo from the 0,0 position.
-    x, y = 0,0
-    return (x, y)
+    transformer = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:3857")
+
+    return transformer.transform(lon, lat)
+
+def meters_to_latlon(x: float, y: float) -> tuple[float, float]:
+    transformer = pyproj.Transformer.from_crs("EPSG:3857", "EPSG:4326")
+
+    return transformer.transform(x, y)
+
 
 def get_bbox(meter_offset: float, lat: float, lon: float) -> tuple[float, float, float, float]:
-    EARTH_EQUATOR_RADIUS = 6378
-    km_per_deg = (np.pi/180) * EARTH_EQUATOR_RADIUS * np.cos(lat * np.pi/180)
-    dcoord = meter_offset / 1000 / km_per_deg
-    new_lat = lat + dcoord
-    # use old latitude because we want to move longitudinally from the same latitude we started
-    new_lon = lon + dcoord / np.cos(lat * np.pi/180)
-    return (-new_lon,-new_lat,new_lon,new_lat)
+    x_meters, y_meters = latlon_to_meters(lat, lon)
+    return x_meters-meter_offset,\
+           y_meters-meter_offset,\
+           x_meters+meter_offset,\
+           y_meters+meter_offset
 
 def get_image_offset(height: float, hfov: float) -> float:
     # SOHCAHTOA: Tan(angle) = Opposite / Adjacent
@@ -167,13 +172,20 @@ def calculate_ideal_zoom(bbox: tuple[float,float,float,float]) -> tuple[int, int
         1 tile for whole map to 64 tiles for whole map
         that is closest to fit the map size
     '''
-
-    quarter = bbox[2] # length of a quarter tile
+    
+    # length of a quarter tile in meters
+    quarter_x = (bbox[2] - bbox[0]) / 2
+    print(f"quarter_x = {quarter_x}")
+    # latitude expressed in meters
+    quarter_y = (bbox[3] + bbox[1]) / 2
+    print(f"quarter_y = {quarter_y}")
+    _, bbox_longitude = meters_to_latlon(quarter_x, quarter_y)
+    print(f"bbox_longitude = {bbox_longitude}")
     zoom_levels = [360.0]
     for zoom in range(1,21):
         zoom_levels.append(zoom_levels[zoom-1] / 2.0)
 
-    diff_to_tile = [abs(width - quarter) for width in zoom_levels]
+    diff_to_tile = [abs(width - bbox_longitude) for width in zoom_levels]
 
     # find the zoom that fits 4 quarter tiles best
     index = 0

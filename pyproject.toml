@@ -12,6 +12,7 @@ dependencies = [
     "lxml-stubs>=0.5.1",
     "numpy>=2.5.1",
     "packaging>=26.2",
+    "pyproj>=3.7.2",
     "watchdog>=6.0.0",
 ]
 

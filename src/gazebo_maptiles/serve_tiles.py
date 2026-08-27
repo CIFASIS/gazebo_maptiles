@@ -6,7 +6,7 @@ from pathlib import Path
 app = FastAPI()
 
 TILES_DIR: str
-@app.get("/{zoom}/{x}/{y}")
+@app.get("/{zoom}/{x}/{y}.png")
 async def get_tile(zoom: int, x: int, y: int) -> FileResponse:
     global TILES_DIR
     path = Path(TILES_DIR, str(zoom), str(x), str(y) + ".png")

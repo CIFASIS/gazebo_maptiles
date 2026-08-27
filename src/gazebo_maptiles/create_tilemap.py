@@ -14,17 +14,21 @@ def create_tilemap(args):
         print(f"Cannot overwrite {tiles_dir}. Remove before running!")
         exit(1)
 
+    tif = str(png_path.stem) + '.tif'
     subprocess.run(['gdal', 'raster', 'pipeline',
                     'read', str(png_path), '!',
-                    'edit', '--bbox', bbox_str,
-                    '--crs', 'EPSG:4326', '!',
-                    'write', str(png_path.stem) + '.tif', '--format=GTiff'])
+                    'edit', '--crs', 'EPSG:3857', '!',
+                    'edit', '--bbox', bbox_str, '!',
+                    'write', tif, '--format=GTiff'
+    ], check=True)
     subprocess.run(['gdal', 'raster', 'tile',
+                    '--tiling-scheme', 'WorldMercatorWGS84Quad',
                     '--min-zoom', str(min_zoom),
                     '--max-zoom', str(max_zoom),
-                    str(png_path.stem) + '.tif', str(tiles_dir)])
+                    tif, str(tiles_dir)
+    ], check=True)
 
-    # Path(png_path.stem + '.tif').unlink(missing_ok=True)
+    # Path(tif).unlink(missing_ok=True)
 
     print("# To serve the tiles, run:")
     print(f"uv run cli serve {tiles_dir}")
