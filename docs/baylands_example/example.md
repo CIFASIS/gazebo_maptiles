@@ -30,7 +30,7 @@ To make use of it, we run the suggested command:
 ```bash
 # To serve the tiles, run:
 uv run cli serve baylands_tiles
-# or if you're not using uv:
+# or if you're not using uv:l
 python3 -m gazebo_maptiles.cli serve baylands_tiles
 ```
 

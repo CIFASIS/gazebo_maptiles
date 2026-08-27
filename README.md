@@ -20,10 +20,10 @@ If you want an explanation for how the values for the map are calculated, check 
 
 ### Using uv
 
-You only need to run the package through uv and it will setup a virtual environment automatically.
+You only need to run the package through uv and it will setup a virtual environment and install the dependencies automatically.
 
 ```bash
-uv run cli ...
+uv run cli -h
 ```
 
 ### Using pip

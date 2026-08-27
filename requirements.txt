@@ -3,3 +3,5 @@ numpy
 watchdog
 lxml
 pyproj
+typeguard
+requests

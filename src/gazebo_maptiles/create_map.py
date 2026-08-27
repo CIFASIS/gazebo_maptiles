@@ -132,13 +132,22 @@ def gazebo_take_photo(height: float, hfov: float, lat: float, lon: float, filepa
     observer.schedule(event_handler, path=str(TMP_IMAGE_PATH), recursive=False)
     observer.start()
 
-    gz_process = subprocess.Popen(["gz", "sim", "-s", "-r", world_with_cam])
+    gz_process = subprocess.Popen(["gz", "sim", "-s", "-r", world_with_cam], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     global recv_trigger
     while not recv_trigger:
-        trigger_msg = subprocess.Popen(['gz', 'topic', '-t', '/world_ortho/trigger', '-m', 'gz.msgs.Boolean', '-p', 'data: true', '-n', '1'])
+        print(".", end='', flush=True)
+        trigger_msg = subprocess.Popen([
+            'gz', 'topic',
+            '-t', '/world_ortho/trigger',
+            '-m', 'gz.msgs.Boolean',
+            '-p', 'data: true',
+            '-n', '1'
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         trigger_msg.wait()
         sleep(1)
+
+    print()
 
     # TODO: Add a timeout and handle with an error message
     observer.join()
@@ -200,7 +209,14 @@ def calculate_ideal_zoom(bbox: tuple[float,float,float,float]) -> tuple[int, int
     else:
         return (index, index+3)
 
-def create_map(args):
+def create_map(args) -> tuple[tuple[float,float,float,float], int, int, Path]:
+    try:
+        subprocess.run(['gz', 'sim', '--versions'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Failed at creating the map image!")
+        print("Gazebo does not seem to be installed. Install it before running!")
+        exit(1)
+
     sq_side: float | None = args.square_side
     hfov: float = args.hfov
     if sq_side:
@@ -225,10 +241,15 @@ def create_map(args):
 
     min_zoom,max_zoom = calculate_ideal_zoom(bbox)
 
+    return bbox, min_zoom, max_zoom, map_name
+
+def create_map_handler(args):
+    bbox, min_zoom, max_zoom, map_name = create_map(args)
+
     pretty_bbox = " ".join(map(lambda val: "%.7f" % val, bbox))
 
     print("# To create a tilemap from this image, run:")
     command_text = f"create --bbox {pretty_bbox} --min_zoom {min_zoom} --max_zoom {max_zoom} {map_name} tiles_dir"
     print("uv run cli " + command_text)
     print("# or if you're not using uv:")
-    print("python3 ./src/gazebo_maptiles/main.py " + command_text)
+    print("python3 -m gazebo_maptiles.cli " + command_text)
