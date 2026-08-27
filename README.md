@@ -22,6 +22,10 @@ If you want an explanation for how the values for the map are calculated, check 
 
 You only need to run the package through uv and it will setup a virtual environment automatically.
 
+```bash
+uv run cli ...
+```
+
 ### Using pip
 
 0) (__Recommended__) Create a virtual environment

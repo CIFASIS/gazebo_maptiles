@@ -58,7 +58,10 @@ class Pose:
 TMP_IMAGE_PATH: Path = Path("/") / "tmp" /"gazebo_images"
 
 def create_camera_xml(height: float, hfov: float, lat: float, lon: float, res: int = 3840) -> _Element:
-    x,y = latlon_to_meters(lat, lon)
+    # x,y = latlon_to_meters(lat, lon)
+    # TODO: keep it at 0 for now until figuring out how to position
+    # the camera in gazebo with the given coordinates.
+    x,y = 0,0
     model = Element('model', name='ortho_map_camera')
     # Rotate the camera 90deg east because gazebo is ENU
     model.append(Pose(x,y,height,-1.57,1.57,0).createElement())
