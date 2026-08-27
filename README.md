@@ -46,12 +46,13 @@ deactivate # turns it off
 ## Running
 
 ```bash
-usage: cli [-h] {photo,create,serve} ...
+usage: cli [-h] {photo,create,serve,pipeline} ...
 
 Script to create and serve tilemaps
 
 positional arguments:
-  {photo,create,serve}  Available subcommands
+  {photo,create,serve,pipeline}
+                        Available subcommands
     photo               Take a photo inside a gazebo simulation
     create              Create a new tilemap
     serve               Start a tilemap server
@@ -63,13 +64,13 @@ options:
 ### Using uv
 
 ```bash
-uv run cli [-h] {photo,create,serve} ...
+uv run cli [-h] {photo,create,serve,pipeline} ...
 ```
 
 ### Using pip
 
 ```bash
-python3 -m gazebo_maptiles.cli [-h] {photo,create,serve} ...
+python3 -m gazebo_maptiles.cli [-h] {photo,create,serve,pipeline} ...
 ```
 
 ## Contributing
