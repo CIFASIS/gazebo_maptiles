@@ -36,11 +36,39 @@ python3 -m gazebo_maptiles.cli serve baylands_tiles
 
 and now we have a functioning WMTS (web map tile service) source to use with mapviz or for other applications.
 
-To use it with mapviz, follow the guide at (https://swri-robotics.github.io/mapviz/guides/local_tile_map_imagery/). You might also need to publish gps information, depending on your mapviz setup. For example:
+To use it with mapviz, follow the guide at (https://swri-robotics.github.io/mapviz/guides/local_tile_map_imagery/).
+
+You might also need to publish gps information, depending on your mapviz setup. For example, in the mapviz launch file:
+
+```python
+...
+        launch_ros.actions.Node(
+            package="swri_transform_util",
+            executable="initialize_origin.py",
+            name="initialize_origin",
+            output="screen",
+            parameters=[
+                {"local_xy_frame": "map"},
+                {"local_xy_origin": "auto"},
+                # {"local_xy_origin": "zero"},
+                {"local_xy_origins": """[
+                    {
+                        "name": "zero",
+                        "latitude": 0.0,
+                        "longitude": 0.0,
+                        "altitude": 0.0,
+                        "heading": 0.0,
+                    }
+                ]"""}
+            ],
+...
+```
+
+If the local_xy_origin is manual, we add an entry to local_xy_origins (we've added 'zero' to it) and set the local_xy_origin to the name of the entry. If it's auto, we would need to publish an origin with:
 
 ```bash
-ros2 topic pub /gz/reach_m2/fix sensor_msgs/msg/NavSatFix "{
-  header: {frame_id: 'base_link'},
+ros2 topic pub /fix sensor_msgs/msg/NavSatFix "{
+  header: {frame_id: 'map'},
   status: {status: 0, service: 1},
   latitude: 0.0,
   longitude: 0.0,
@@ -49,6 +77,8 @@ ros2 topic pub /gz/reach_m2/fix sensor_msgs/msg/NavSatFix "{
 }"
 ```
 
-Set the base URL of the "Custom WMTS Source" to "http://localhost:8000/{level}/{x}/{y}" and max zoom to the one selected (20 in our case) then hit "save". (You might need to zoom in a lot to see it)
+Or publish our simulated robot's position to map.
 
-![Using Mapviz to show the tilemap](./mapviz.png)
+Then, we set the base URL of the "Custom WMTS Source" to "http://localhost:8000/{level}/{x}/{y}" and max zoom to the one selected (19 in our case) and hit "save".
+
+![Using Mapviz to show the tilemap](./mapviz_view.png)

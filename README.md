@@ -45,7 +45,7 @@ deactivate # turns it off
 
 ## Running
 
-```bash
+```
 usage: cli [-h] {photo,create,serve,pipeline} ...
 
 Script to create and serve tilemaps
@@ -56,6 +56,7 @@ positional arguments:
     photo               Take a photo inside a gazebo simulation
     create              Create a new tilemap
     serve               Start a tilemap server
+    pipeline            Take a photo inside gazebo, create a tilemap, then serve it
 
 options:
   -h, --help            show this help message and exit
