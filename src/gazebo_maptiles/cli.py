@@ -18,6 +18,13 @@ def pipeline(args):
     print(f"Creating tilemap at {tiles_dir}...")
     create_tilemap(tiles_dir, map_name, list(bbox), min_zoom, max_zoom)
 
+    # Delete map png and tif
+    map_path = Path(map_name)
+    map_path.with_suffix(".tif").unlink()
+    map_path.unlink()
+
+    print(f"Tilemap's min_zoom and max_zoom: ({min_zoom}, {max_zoom})")
+    
     # Start the server
     host: str = args.host
     port: int = args.port

@@ -26,6 +26,7 @@ class WatchFileCreation(FileSystemEventHandler):
 
         source_path = Path(str(event.src_path))
         source_path.replace(self.target_path)
+        print()
         print(f"Created {self.target_path.name}!")
 
         self.observer.stop()
@@ -146,8 +147,6 @@ def gazebo_take_photo(height: float, hfov: float, lat: float, lon: float, filepa
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         trigger_msg.wait()
         sleep(1)
-
-    print()
 
     # TODO: Add a timeout and handle with an error message
     observer.join()
