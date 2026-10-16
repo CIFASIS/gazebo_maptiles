@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pathlib import Path
 
@@ -11,7 +11,7 @@ async def get_tile(zoom: int, x: int, y: int) -> FileResponse:
     global TILES_DIR
     path = Path(TILES_DIR, str(zoom), str(x), str(y) + ".png")
     if not path.exists():
-        return FileResponse('./tile_not_found.png', media_type="image/png")
+        raise HTTPException(status_code=204, detail="No content")
     return FileResponse(path, media_type="image/png")
 
 def serve_tiles(host: str, port: int, tiles_dir: str):
